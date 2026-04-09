@@ -1,0 +1,69 @@
+#paineis-tela {
+	margin-top: 20px;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+header {
+	background-image: url(../img/back.png);
+	background-size: cover;
+	background-position: top center;
+	height: 100%;
+	
+}
+
+header h1 {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.banner {
+	color: #FFF;
+	background-color: rgba(0, 0, 0, .5);
+	padding: 20px;
+	width: 80%;
+	border-radius: 5px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	transition: .3s;
+}
+
+
+footer {
+	background-color: #333;
+	color: #FFF;
+	padding: 100px;
+	margin-top: 150px;
+	text-align: center;
+}
+
+footer address:last-child {
+	margin-bottom: 0;
+}
+
+@media(min-width: 768px) {
+	#paineis-tela {
+		margin-top: 0;	
+	}
+	
+}
+
+@media(min-width: 992px) {
+	.banner {
+		left: 0;
+		transform: translate(0, -80%);
+		width: 50%;
+	}
+
+	.bannerWrapper {
+		position: relative;
+		height: 100%;
+	}
+}
+
+

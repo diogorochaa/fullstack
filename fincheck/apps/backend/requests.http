@@ -1,0 +1,146 @@
+@baseUrl = http://localhost:3000
+@authToken = COLE_SEU_TOKEN_AQUI
+
+# IDs para facilitar os testes de update/delete
+@bankAccountId = 00000000-0000-0000-0000-000000000001
+@categoryId = 00000000-0000-0000-0000-000000000002
+@transactionId = 00000000-0000-0000-0000-000000000003
+
+### =====================================
+### AUTH (PUBLIC)
+### =====================================
+
+### Signup
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "name": "Joao Silva",
+  "email": "joao.silva2@example.com",
+  "password": "senha1234"
+}
+
+### Signin
+POST {{baseUrl}}/auth/signin
+Content-Type: application/json
+
+{
+  "email": "joao.silva2@example.com",
+  "password": "senha1234"
+}
+
+### =====================================
+### USERS (PRIVATE)
+### =====================================
+
+### Buscar usuario autenticado
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{authToken}}
+
+### =====================================
+### CATEGORIES (PRIVATE)
+### =====================================
+
+### Listar categorias do usuario
+GET {{baseUrl}}/categories
+Authorization: Bearer {{authToken}}
+
+### =====================================
+### BANK ACCOUNTS (PRIVATE)
+### =====================================
+
+### Criar conta bancaria
+POST {{baseUrl}}/bank-accounts
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Conta Corrente",
+  "initialBalance": 1000,
+  "type": "CHECKING",
+  "color": "#FF0000"
+}
+
+### Listar contas bancarias
+GET {{baseUrl}}/bank-accounts
+Authorization: Bearer {{authToken}}
+
+### Atualizar conta bancaria
+PUT {{baseUrl}}/bank-accounts/{{bankAccountId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Conta Corrente Principal",
+  "initialBalance": 2500,
+  "type": "CHECKING",
+  "color": "#00AAFF"
+}
+
+### Remover conta bancaria
+DELETE {{baseUrl}}/bank-accounts/{{bankAccountId}}
+Authorization: Bearer {{authToken}}
+
+### =====================================
+### TRANSACTIONS (PRIVATE)
+### =====================================
+
+### Criar transacao
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "bankAccountId": "{{bankAccountId}}",
+  "categoryId": "{{categoryId}}",
+  "name": "Salario",
+  "value": 5000,
+  "date": "2026-04-01T10:00:00.000Z",
+  "type": "INCOME"
+}
+
+### Listar transacoes
+GET {{baseUrl}}/transactions
+Authorization: Bearer {{authToken}}
+
+### Listar transacoes com filtros obrigatorios (month/year)
+GET {{baseUrl}}/transactions?month=4&year=2026
+Authorization: Bearer {{authToken}}
+
+### Listar transacoes filtrando por tipo (INCOME)
+GET {{baseUrl}}/transactions?month=4&year=2026&type=INCOME
+Authorization: Bearer {{authToken}}
+
+### Listar transacoes filtrando por tipo (EXPENSE)
+GET {{baseUrl}}/transactions?month=4&year=2026&type=EXPENSE
+Authorization: Bearer {{authToken}}
+
+### Listar transacoes filtrando por conta bancaria
+GET {{baseUrl}}/transactions?month=4&year=2026&bankAccountId={{bankAccountId}}
+Authorization: Bearer {{authToken}}
+
+### Listar transacoes com filtros combinados (month/year/type/bankAccountId)
+GET {{baseUrl}}/transactions?month=4&year=2026&type=INCOME&bankAccountId={{bankAccountId}}
+Authorization: Bearer {{authToken}}
+
+### Teste de validacao: month invalido (esperado 400)
+GET {{baseUrl}}/transactions?month=13&year=2026
+Authorization: Bearer {{authToken}}
+
+### Atualizar transacao
+PUT {{baseUrl}}/transactions/{{transactionId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "bankAccountId": "{{bankAccountId}}",
+  "categoryId": "{{categoryId}}",
+  "name": "Salario Ajustado",
+  "value": 5200,
+  "date": "2026-04-05T10:00:00.000Z",
+  "type": "INCOME"
+}
+
+### Remover transacao
+DELETE {{baseUrl}}/transactions/{{transactionId}}
+Authorization: Bearer {{authToken}}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/estilos.css">
+    <title>BuscaGIT</title>
+    
+    
+</head>
+
+<body>
+		
+	<header>
+		<nav class="navbar navbar-default">
+			<div class="container">
+                    <!--Titulo no topo da página-->
+				<div class="navbar-header">
+			    	<a class="navbar-brand" href=""><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> BuscaGIT</a>
+				</div>
+
+				
+			</div>
+        </nav>
+        
+        
+        <!--Banner transparente-->
+		<div class="container bannerWrapper">
+			<div class="banner">
+				<h1>BuscaGIT</h1>
+				<p>Busque suas informações!</p>
+			</div>
+        </div>
+        
+        
+
+    </header>
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div align="center" class="well well-sm">
+                        <form id="formulario">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-addon" id="sizing-addon1">@</span>
+                                <input type="text" class="form-control input-busca" placeholder="Usuário" aria-describedby="sizing-addon1">
+                            </div>                          
+                                <button type="submit" class="btn btn-success">Buscar</button>
+                                <figure class="img">
+                                    <img class="img-responsive img-circle avatar" src="" alt="">
+                                </figure>
+                                <div class="texto">
+                                    <h4 id="nome"></h4>
+                                    <h4 id="usuario"></h4>
+                                    <h4 id="seguidores"></h4>  
+                                    <h4 id="repositorio"></h4>                                       
+                                </div>                                
+                            </div>                      
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+                    
+            
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div align="center" class="well well-sm">
+                        <button class="btn btn-danger buscaRepositorios">Repositórios</button> 
+                        <button class="btn btn-danger visitados">Mais visitados</button>
+    
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nome</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>                               
+                                    <td id="insereRepositorio"></td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nome</th>
+                                    <th scope="col">Repositórios</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>                               
+                                    <td id="insereNomeRep"></td>
+                                    <td id="insereRepositorioVisitado"></td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>                       
+                </div>
+            </div>
+        </div>  
+
+    </section>
+    
+        
+            
+    
+    
+
+    
+    <footer>
+        <address>
+            <strong>BuscaGIT</strong><br>
+            Rua Cel Chicuta, 3185, Vila Jardim<br>
+            Porto Alegre, RS<br>
+            Tel: (54) 3317-9855 ou 3321-6633
+        </address>
+        <address>
+            E-mail: <a href="https://outlook.live.com/mail/inbox">@BuscaGIT</a>
+        </address>
+    </footer>
+    
+
+    
+    
+    <script src="js/jquery.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/busca.js"></script>
+    
+    
+    
+</body>
+</html>

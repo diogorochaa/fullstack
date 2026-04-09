@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/busca.css">
+    <title>IsMusic</title>
+    
+    
+</head>
+
+<body>
+		
+	<header>
+		<nav class="navbar navbar-default">
+			<div class="container">
+
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#collapse-navbar" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+
+					<a class="navbar-brand" href="home.html"><span class="glyphicon glyphicon-music" aria-hidden="true"></span> IsMusic</a>
+				</div>
+
+				<div class="collapse navbar-collapse" id="collapse-navbar">
+                    <ul class="nav navbar-nav">
+                        <li><a href="home.html"> <span class="glyphicon glyphicon-signal" aria-hidden="true"></span> Sobre Nós</a></li>
+                        <li><a href="generos.html"> <span class="glyphicon glyphicon-globe" aria-hidden="true"></span> Nossos Genêros</a></li>  
+                        <li><a href="busca.html"> <span class="glyphicon glyphicon-search" aria-hidden="true"></span> Buscar</a></li>
+                    </ul>
+				</div>
+			</div>
+        </nav>
+        
+        
+
+		<div class="container bannerWrapper">
+			<div class="banner">
+				<h1>IsMusic</h1>
+				<p>O melhor da música mundial!</p>
+			</div>
+        </div>
+        
+        
+
+    </header>
+
+    <div class="container">
+        <form class="formulario">
+            <div class="form-group">
+                <h1>Busque a sua música</h1>
+                <label>Artista</label>
+                <input type="text" class="form-control" id="artista" placeholder="" required>
+            </div>
+            <div class="form-group">
+                <label>Música</label>
+                <input type="text" class="form-control" id="musica" placeholder="" required>
+            </div>
+            <button type="submit" class="btn btn-danger">Buscar</button>
+        </form>
+    </div>
+
+
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div  id="letraMusica"></div>
+
+            </div>
+        </div>
+    </div>
+    
+        
+            
+    
+    
+
+    
+    <footer>
+        <address>
+            <strong>IsMusic</strong><br>
+            Rua Cel Chicuta, 3185, Vila Jardim<br>
+            Porto Alegre, RS<br>
+            Tel: (54) 3317-9855 ou 3321-6633
+        </address>
+        <address>
+            E-mail: <a href="https://outlook.live.com/mail/inbox">@ISMUSIC</a>
+        </address>
+    </footer>
+    
+
+    
+    
+    <script src="js/jquery.js"></script>
+    <script src="js/buscar-musicas.js"></script>
+    
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    
+    
+    
+</body>
+</html>

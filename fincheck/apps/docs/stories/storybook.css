@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  --font-sans: "Inter", "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+
+  --fc-primary: #7c3aed;
+  --fc-primary-hover: #6d28d9;
+  --fc-background: #f8fafc;
+  --fc-card: #ffffff;
+  --fc-border: #e2e8f0;
+  --fc-text: #0f172a;
+  --fc-text-muted: #64748b;
+  --fc-success: #16a34a;
+  --fc-danger: #dc2626;
+  --fc-warning: #d97706;
+  --fc-info: #0284c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--fc-background);
+  color: var(--fc-text);
+}
+
+.sb-display-font {
+  font-family: var(--font-display);
+}

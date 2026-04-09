@@ -1,0 +1,77 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+@source "./";
+@source "../../../packages/ui/src";
+
+:root {
+  --fc-primary: #7c3aed;
+  --fc-primary-hover: #6d28d9;
+  --fc-background: #f8fafc;
+  --fc-card: #ffffff;
+  --fc-border: #e2e8f0;
+  --fc-text: #0f172a;
+  --fc-text-muted: #64748b;
+  --fc-success: #22c55e;
+  --fc-danger: #ef4444;
+}
+
+body {
+  margin: 0;
+  background: var(--fc-background);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: var(--fc-text);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.fc-card {
+  border-radius: 12px;
+  border: 1px solid var(--fc-border);
+  background: var(--fc-card);
+  box-shadow: 0 8px 24px -18px rgba(15, 23, 42, 0.35);
+  padding: 20px;
+}
+
+.fc-input {
+  height: 40px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--fc-border);
+  background: #fff;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--fc-text);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.fc-input:focus {
+  border-color: var(--fc-primary);
+}
+
+.fc-label {
+  margin-bottom: 6px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fc-text-muted);
+}
+
+.fc-primary-btn {
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--fc-primary);
+  color: #fff;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.fc-primary-btn:hover {
+  background: var(--fc-primary-hover);
+}

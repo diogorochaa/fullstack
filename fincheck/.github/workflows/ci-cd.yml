@@ -1,0 +1,161 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ci-cd-main
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      storybook: ${{ steps.filter.outputs.storybook }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            storybook:
+              - 'apps/docs/**'
+              - 'packages/ui/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/ci-cd.yml'
+
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm check-types
+
+      - name: Run backend tests
+        run: pnpm --filter api test
+
+      - name: Run frontend tests with coverage
+        run: pnpm --filter web test:coverage
+
+      - name: Build all apps
+        run: pnpm build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          if-no-files-found: warn
+          path: |
+            apps/backend/dist
+            apps/web/dist
+            apps/docs/.next
+
+  cd:
+    name: Continuous Delivery
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: release
+
+      - name: Package release candidate
+        run: tar -czf fincheck-release-${{ github.sha }}.tar.gz -C release .
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: fincheck-release-${{ github.sha }}
+          path: fincheck-release-${{ github.sha }}.tar.gz
+
+  storybook-build:
+    name: Storybook Build
+    needs: [ci, changes]
+    if: needs.changes.outputs.storybook == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --filter docs exec playwright install --with-deps chromium
+
+      - name: Run Storybook component tests
+        run: pnpm --filter docs run storybook:test:ci
+
+      - name: Build Storybook
+        run: pnpm --filter docs build-storybook
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Storybook artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/docs/storybook-static
+
+  storybook-deploy:
+    name: Storybook Deploy
+    needs: storybook-build
+    if: needs.storybook-build.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
