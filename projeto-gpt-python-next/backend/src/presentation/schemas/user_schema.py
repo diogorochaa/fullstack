@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
@@ -14,7 +15,7 @@ class UserLoginRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     email: str
     created_at: datetime
 

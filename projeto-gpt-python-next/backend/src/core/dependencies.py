@@ -1,6 +1,11 @@
 from functools import lru_cache
+from uuid import UUID
 
 from langchain_openai import ChatOpenAI
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.infrastructure.adapters.faiss_vector_store_adapter import (
@@ -15,6 +20,10 @@ from src.infrastructure.adapters.pdf_text_extractor import (
 from src.infrastructure.gateways.postgres_message_history import (
     PostgresMessageHistoryGateway,
 )
+from src.infrastructure.database.models import User
+from src.infrastructure.database.session import get_db
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_settings():
@@ -44,6 +53,34 @@ def get_pdf_text_extractor():
     return PdfTextExtractorAdapter()
 
 
-@lru_cache
-def get_message_history():
-    return PostgresMessageHistoryGateway(settings.DATABASE_URL)
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    credentials_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Nao foi possivel autenticar o usuario.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+        subject = payload.get("sub")
+        if not subject:
+            raise credentials_error
+        user_id = UUID(subject)
+    except (JWTError, ValueError):
+        raise credentials_error from None
+
+    user = db.get(User, user_id)
+    if user is None:
+        raise credentials_error
+    return user
+
+
+def get_message_history(current_user: User = Depends(get_current_user)):
+    return PostgresMessageHistoryGateway(settings.DATABASE_URL, current_user.id)

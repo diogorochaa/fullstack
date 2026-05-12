@@ -11,7 +11,7 @@ export type LoginResult = {
 };
 
 export type RegisterResult = {
-  id: number;
+  id: string;
   email: string;
 };
 

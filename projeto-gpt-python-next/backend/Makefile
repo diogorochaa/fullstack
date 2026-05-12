@@ -1,4 +1,4 @@
-.PHONY: format lint fix test typecheck check install dev run migrate generate
+.PHONY: format lint fix test typecheck check install dev run migrate generate infra-up infra-down infra-logs
 
 format:
 	uv run ruff format .
@@ -35,3 +35,12 @@ migrate:
 
 generate:
 	PYTHONPATH=. uv run alembic revision --autogenerate -m "$(m)"
+
+infra-up:
+	docker compose up -d redis rabbitmq
+
+infra-down:
+	docker compose stop redis rabbitmq
+
+infra-logs:
+	docker compose logs -f redis rabbitmq

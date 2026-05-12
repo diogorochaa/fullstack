@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import { askAiAction, uploadDocumentAction } from "@/features/chat/actions";
+import { useAuth } from "@/features/auth/context";
+import {
+  clearMessageHistory,
+  postMessage,
+  requestAiAnswer,
+  requestDocumentUpload,
+  requestMessages,
+} from "@/server/chat-api";
 import type { ChatConversation, ChatMessage } from "@/types/chat";
-
-const STORAGE_KEY = "docmind:conversations";
 
 function sortByNewest(conversations: ChatConversation[]) {
   return [...conversations].sort(
@@ -28,109 +33,116 @@ function getFileKind(file: File): "pdf" | "image" | "file" {
   return "file";
 }
 
-function createConversation(): ChatConversation {
+function getConversationTitle(messages: ChatMessage[]) {
+  const firstUserMessage = messages.find((message) => message.role === "user");
+  const attachmentTitle = firstUserMessage?.attachment?.name
+    ?.replace(/\.[^/.]+$/, "")
+    .slice(0, 40);
+
+  return (
+    firstUserMessage?.content.slice(0, 40) || attachmentTitle || "Nova conversa"
+  );
+}
+
+function createConversation(messages: ChatMessage[] = []): ChatConversation {
   return {
     id: crypto.randomUUID(),
-    title: "Nova conversa",
+    title: getConversationTitle(messages),
     updatedAt: new Date().toISOString(),
-    messages: [],
+    messages,
   };
 }
 
+function mapHistoryMessage(role: string, content: string): ChatMessage {
+  return {
+    role: role === "assistant" ? "assistant" : "user",
+    content,
+  };
+}
+
+function getUserMessageContent(question: string, selectedFile: File | null) {
+  if (question) {
+    return question;
+  }
+
+  return selectedFile?.name ?? "";
+}
+
 export function useChat() {
+  const { session, ready } = useAuth();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
-  const [hasHydrated, setHasHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function updateConversation(messages: ChatMessage[]) {
+    const conversation = createConversation(messages);
+    setConversations([conversation]);
+    setActiveConversationId(conversation.id);
+  }
+
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!ready) return;
 
-      if (!raw) {
-        setHasHydrated(true);
-        return;
-      }
+    if (!session?.accessToken) {
+      setConversations([]);
+      setActiveConversationId(null);
+      setInput("");
+      setSelectedFile(null);
+      return;
+    }
 
+    let cancelled = false;
+
+    async function loadHistory() {
       try {
-        const parsed = sortByNewest(JSON.parse(raw) as ChatConversation[]);
-        setConversations(parsed);
-        setActiveConversationId(parsed[0]?.id ?? null);
-      } catch {
-        setConversations([]);
-        setActiveConversationId(null);
-      } finally {
-        setHasHydrated(true);
+        const history = await requestMessages(session.accessToken);
+        if (cancelled) return;
+
+        const messages = history.map((message) =>
+          mapHistoryMessage(message.role, message.content),
+        );
+        const conversation = createConversation(messages);
+
+        setConversations([conversation]);
+        setActiveConversationId(conversation.id);
+      } catch (error) {
+        if (!cancelled) {
+          console.error(error);
+          const conversation = createConversation();
+          setConversations([conversation]);
+          setActiveConversationId(conversation.id);
+        }
       }
-    }, 0);
+    }
+
+    void loadHistory();
 
     return () => {
-      window.clearTimeout(timeoutId);
+      cancelled = true;
     };
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-  }, [conversations, hasHydrated]);
+  }, [ready, session?.accessToken]);
 
   const activeConversation =
     conversations.find((item) => item.id === activeConversationId) ?? null;
 
   const messages = activeConversation?.messages ?? [];
 
-  function applyConversationUpdate(
-    conversationId: string,
-    update: (messages: ChatMessage[]) => ChatMessage[],
-  ) {
-    setConversations((previous) =>
-      sortByNewest(
-        previous.map((conversation) => {
-          if (conversation.id !== conversationId) return conversation;
-
-          const nextMessages = update(conversation.messages);
-          const firstUserMessage = nextMessages.find(
-            (msg) => msg.role === "user",
-          );
-          const fallbackTitleFromAttachment = firstUserMessage?.attachment?.name
-            ?.replace(/\.[^/.]+$/, "")
-            .slice(0, 40);
-
-          return {
-            ...conversation,
-            title:
-              firstUserMessage?.content.slice(0, 40) ||
-              fallbackTitleFromAttachment ||
-              "Nova conversa",
-            updatedAt: new Date().toISOString(),
-            messages: nextMessages,
-          };
-        }),
-      ),
-    );
-  }
-
-  function ensureActiveConversationId(): string {
-    if (activeConversationId) return activeConversationId;
-
-    const newConversation = createConversation();
-    setConversations((previous) =>
-      sortByNewest([newConversation, ...previous]),
-    );
-    setActiveConversationId(newConversation.id);
-    return newConversation.id;
-  }
-
   async function createNewConversation() {
-    const newConversation = createConversation();
-    setConversations((previous) =>
-      sortByNewest([newConversation, ...previous]),
-    );
-    setActiveConversationId(newConversation.id);
+    if (session?.accessToken) {
+      try {
+        await clearMessageHistory(session.accessToken);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    const conversation = createConversation();
+    setConversations([conversation]);
+    setActiveConversationId(conversation.id);
     setInput("");
     setSelectedFile(null);
   }
@@ -140,28 +152,18 @@ export function useChat() {
   }
 
   async function deleteConversation(conversationId: string) {
-    setConversations((previous) => {
-      const next = previous.filter(
-        (conversation) => conversation.id !== conversationId,
-      );
-
-      if (activeConversationId === conversationId) {
-        setActiveConversationId(next[0]?.id ?? null);
-      }
-
-      return next;
-    });
+    if (conversationId !== activeConversationId) return;
+    await createNewConversation();
   }
 
   async function sendMessage() {
     const question = input.trim();
     if (!question && !selectedFile) return;
-
-    const conversationId = ensureActiveConversationId();
+    if (!session?.accessToken) return;
 
     const userMessage: ChatMessage = {
       role: "user",
-      content: question,
+      content: getUserMessageContent(question, selectedFile),
       attachment: selectedFile
         ? {
             name: selectedFile.name,
@@ -170,29 +172,37 @@ export function useChat() {
           }
         : undefined,
     };
-    applyConversationUpdate(conversationId, (previous) => [
-      ...previous,
-      userMessage,
-    ]);
+
+    const nextMessages = [...messages, userMessage];
+    updateConversation(nextMessages);
     setInput("");
     setLoading(true);
 
     try {
       if (selectedFile) {
-        await uploadDocumentAction(selectedFile);
+        await requestDocumentUpload(selectedFile, session.accessToken);
       }
 
+      await postMessage(
+        session.accessToken,
+        userMessage.role,
+        userMessage.content,
+      );
+
       if (question) {
-        const answer = await askAiAction(question);
-        applyConversationUpdate(conversationId, (previous) => [
-          ...previous,
-          { role: "assistant", content: answer },
-        ]);
+        const answer = await requestAiAnswer(question, session.accessToken);
+        const assistantMessage: ChatMessage = {
+          role: "assistant",
+          content: answer,
+        };
+
+        updateConversation([...nextMessages, assistantMessage]);
+        await postMessage(session.accessToken, assistantMessage.role, answer);
       }
     } catch (error) {
       console.error(error);
-      applyConversationUpdate(conversationId, (previous) => [
-        ...previous,
+      updateConversation([
+        ...nextMessages,
         {
           role: "assistant",
           content:
