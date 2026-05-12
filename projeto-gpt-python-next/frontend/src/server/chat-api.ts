@@ -4,6 +4,7 @@ const BACKEND_API_URL =
   "http://localhost:8001";
 
 type HistoryMessage = {
+  conversation_id: string;
   role: "user" | "assistant";
   content: string;
   created_at: string;
@@ -21,11 +22,19 @@ function authHeaders(token?: string, contentType = "application/json") {
 }
 
 async function readErrorMessage(response: Response, fallback: string) {
-  const err = (await response.json().catch(() => null)) as {
-    detail?: unknown;
-  } | null;
-  const detail = err?.detail;
-  if (typeof detail === "string") return detail;
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const err = (await response.json().catch(() => null)) as {
+      detail?: unknown;
+    } | null;
+    const detail = err?.detail;
+    if (typeof detail === "string") return detail;
+  }
+
+  const body = await response.text().catch(() => "");
+  if (body.trim()) return body;
+
   return fallback;
 }
 
@@ -63,13 +72,14 @@ export async function clearMessageHistory(token?: string): Promise<void> {
 
 export async function postMessage(
   token?: string,
+  conversationId: string,
   role: "user" | "assistant",
   content: string,
 ): Promise<void> {
   const response = await fetch(`${BACKEND_API_URL}/messages/`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ role, content }),
+    body: JSON.stringify({ conversation_id: conversationId, role, content }),
     cache: "no-store",
   });
 
@@ -114,6 +124,8 @@ export async function requestDocumentUpload(
   });
 
   if (!response.ok) {
-    throw new Error("Falha ao enviar arquivo para a API.");
+    throw new Error(
+      await readErrorMessage(response, "Falha ao enviar arquivo para a API."),
+    );
   }
 }

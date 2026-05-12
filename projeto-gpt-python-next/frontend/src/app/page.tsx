@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { AppShell, Box } from '@mantine/core'
+import { AppShell, Box } from "@mantine/core";
 
-import { AuthGuard } from '@/features/auth/components/AuthGuard'
-import { ChatComposer } from '@/features/chat/components/ChatComposer'
-import { ChatHeader } from '@/features/chat/components/ChatHeader'
-import { ChatMessageList } from '@/features/chat/components/ChatMessageList'
-import { ChatSidebar } from '@/features/chat/components/ChatSidebar'
-import { useChat } from '@/features/chat/hooks/useChat'
-import { useApiStatus } from '@/features/system/hooks/useApiStatus'
+import { AuthGuard } from "@/features/auth/components/AuthGuard";
+import { ChatComposer } from "@/features/chat/components/ChatComposer";
+import { ChatHeader } from "@/features/chat/components/ChatHeader";
+import { ChatMessageList } from "@/features/chat/components/ChatMessageList";
+import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
+import { useChat } from "@/features/chat/hooks/useChat";
+import { useApiStatus } from "@/features/system/hooks/useApiStatus";
 
 export default function Home() {
   const {
@@ -18,14 +18,15 @@ export default function Home() {
     input,
     selectedFile,
     loading,
+    feedbackMessage,
     setInput,
     setSelectedFile,
     createConversation,
     selectConversation,
     deleteConversation,
     sendMessage,
-  } = useChat()
-  const apiStatus = useApiStatus()
+  } = useChat();
+  const apiStatus = useApiStatus();
 
   return (
     <AuthGuard>
@@ -33,11 +34,14 @@ export default function Home() {
         padding="md"
         navbar={{
           width: 320,
-          breakpoint: 'sm',
+          breakpoint: "sm",
         }}
         styles={{
-          main: { backgroundColor: '#09090b' },
-          navbar: { backgroundColor: '#09090b', borderInlineEnd: '1px solid #27272a' },
+          main: { backgroundColor: "#09090b" },
+          navbar: {
+            backgroundColor: "#09090b",
+            borderInlineEnd: "1px solid #27272a",
+          },
         }}
       >
         <AppShell.Navbar p="xs">
@@ -50,10 +54,16 @@ export default function Home() {
           />
         </AppShell.Navbar>
 
-        <AppShell.Main style={{ height: '100vh' }}>
+        <AppShell.Main style={{ height: "100vh" }}>
           <ChatHeader apiStatus={apiStatus} />
 
-          <Box style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 52px)' }}>
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              height: "calc(100% - 52px)",
+            }}
+          >
             <Box style={{ flex: 1, minHeight: 0 }}>
               <ChatMessageList messages={messages} loading={loading} />
             </Box>
@@ -61,6 +71,7 @@ export default function Home() {
               input={input}
               selectedFile={selectedFile}
               loading={loading}
+              feedbackMessage={feedbackMessage}
               onInputChange={setInput}
               onFileChange={setSelectedFile}
               onSendMessage={sendMessage}
@@ -69,5 +80,5 @@ export default function Home() {
         </AppShell.Main>
       </AppShell>
     </AuthGuard>
-  )
+  );
 }

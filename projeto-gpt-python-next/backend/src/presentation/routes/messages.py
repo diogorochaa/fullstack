@@ -17,6 +17,7 @@ def get_messages(history=Depends(get_message_history)):
     messages = list_messages(history)
     return [
         MessageResponse(
+            conversation_id=message.conversation_id,
             role=message.role,
             content=message.content,
             created_at=message.created_at,
@@ -31,10 +32,15 @@ def post_message(
     history=Depends(get_message_history),
 ):
     message = create_message(
-        CreateMessageCommand(role=payload.role, content=payload.content),
+        CreateMessageCommand(
+            conversation_id=payload.conversation_id,
+            role=payload.role,
+            content=payload.content,
+        ),
         history,
     )
     return MessageResponse(
+        conversation_id=message.conversation_id,
         role=message.role,
         content=message.content,
         created_at=message.created_at,

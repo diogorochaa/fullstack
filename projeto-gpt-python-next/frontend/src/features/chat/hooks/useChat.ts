@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/context";
 import {
-  clearMessageHistory,
   postMessage,
   requestAiAnswer,
   requestDocumentUpload,
@@ -44,17 +43,28 @@ function getConversationTitle(messages: ChatMessage[]) {
   );
 }
 
-function createConversation(messages: ChatMessage[] = []): ChatConversation {
+function createConversation(
+  messages: ChatMessage[] = [],
+  id = crypto.randomUUID(),
+  updatedAt = new Date().toISOString(),
+): ChatConversation {
   return {
-    id: crypto.randomUUID(),
+    id,
     title: getConversationTitle(messages),
-    updatedAt: new Date().toISOString(),
+    updatedAt,
     messages,
   };
 }
 
-function mapHistoryMessage(role: string, content: string): ChatMessage {
+function mapHistoryMessage(
+  conversationId: string,
+  createdAt: string,
+  role: string,
+  content: string,
+): ChatMessage {
   return {
+    conversationId,
+    createdAt,
     role: role === "assistant" ? "assistant" : "user",
     content,
   };
@@ -77,11 +87,23 @@ export function useChat() {
   const [input, setInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  function updateConversation(messages: ChatMessage[]) {
-    const conversation = createConversation(messages);
-    setConversations([conversation]);
-    setActiveConversationId(conversation.id);
+  function upsertConversation(conversationId: string, messages: ChatMessage[]) {
+    setConversations((previous) =>
+      sortByNewest(
+        previous.map((conversation) => {
+          if (conversation.id !== conversationId) return conversation;
+
+          return {
+            ...conversation,
+            title: getConversationTitle(messages),
+            updatedAt: new Date().toISOString(),
+            messages,
+          };
+        }),
+      ),
+    );
   }
 
   useEffect(() => {
@@ -92,6 +114,7 @@ export function useChat() {
       setActiveConversationId(null);
       setInput("");
       setSelectedFile(null);
+      setFeedbackMessage(null);
       return;
     }
 
@@ -102,13 +125,42 @@ export function useChat() {
         const history = await requestMessages(session.accessToken);
         if (cancelled) return;
 
-        const messages = history.map((message) =>
-          mapHistoryMessage(message.role, message.content),
-        );
-        const conversation = createConversation(messages);
+        const grouped = history.reduce<Record<string, ChatMessage[]>>(
+          (accumulator, message) => {
+            const conversationId = message.conversation_id;
+            if (!accumulator[conversationId]) {
+              accumulator[conversationId] = [];
+            }
 
-        setConversations([conversation]);
-        setActiveConversationId(conversation.id);
+            accumulator[conversationId].push(
+              mapHistoryMessage(
+                conversationId,
+                message.created_at,
+                message.role,
+                message.content,
+              ),
+            );
+            return accumulator;
+          },
+          {},
+        );
+
+        const loadedConversations = Object.entries(grouped).map(
+          ([conversationId, messages]) => ({
+            id: conversationId,
+            title: getConversationTitle(messages),
+            updatedAt: messages.at(-1)?.createdAt ?? new Date().toISOString(),
+            messages,
+          }),
+        );
+
+        const conversationsToSet =
+          loadedConversations.length > 0
+            ? sortByNewest(loadedConversations)
+            : [createConversation()];
+
+        setConversations(conversationsToSet);
+        setActiveConversationId(conversationsToSet[0]?.id ?? null);
       } catch (error) {
         if (!cancelled) {
           console.error(error);
@@ -132,19 +184,12 @@ export function useChat() {
   const messages = activeConversation?.messages ?? [];
 
   async function createNewConversation() {
-    if (session?.accessToken) {
-      try {
-        await clearMessageHistory(session.accessToken);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
     const conversation = createConversation();
-    setConversations([conversation]);
+    setConversations((previous) => sortByNewest([conversation, ...previous]));
     setActiveConversationId(conversation.id);
     setInput("");
     setSelectedFile(null);
+    setFeedbackMessage(null);
   }
 
   function selectConversation(conversationId: string) {
@@ -152,8 +197,22 @@ export function useChat() {
   }
 
   async function deleteConversation(conversationId: string) {
-    if (conversationId !== activeConversationId) return;
-    await createNewConversation();
+    setConversations((previous) => {
+      const next = previous.filter(
+        (conversation) => conversation.id !== conversationId,
+      );
+
+      if (activeConversationId === conversationId) {
+        const fallbackConversation = next[0] ?? createConversation();
+        setActiveConversationId(fallbackConversation.id);
+
+        if (next.length === 0) {
+          return [fallbackConversation];
+        }
+      }
+
+      return next;
+    });
   }
 
   async function sendMessage() {
@@ -161,7 +220,13 @@ export function useChat() {
     if (!question && !selectedFile) return;
     if (!session?.accessToken) return;
 
+    setFeedbackMessage(null);
+
+    const conversationId = activeConversationId ?? createConversation().id;
+
     const userMessage: ChatMessage = {
+      conversationId,
+      createdAt: new Date().toISOString(),
       role: "user",
       content: getUserMessageContent(question, selectedFile),
       attachment: selectedFile
@@ -174,7 +239,23 @@ export function useChat() {
     };
 
     const nextMessages = [...messages, userMessage];
-    updateConversation(nextMessages);
+    if (!activeConversationId) {
+      setConversations((previous) =>
+        sortByNewest([
+          {
+            id: conversationId,
+            title: getConversationTitle(nextMessages),
+            updatedAt: new Date().toISOString(),
+            messages: nextMessages,
+          },
+          ...previous,
+        ]),
+      );
+      setActiveConversationId(conversationId);
+    } else {
+      upsertConversation(conversationId, nextMessages);
+    }
+
     setInput("");
     setLoading(true);
 
@@ -185,6 +266,7 @@ export function useChat() {
 
       await postMessage(
         session.accessToken,
+        conversationId,
         userMessage.role,
         userMessage.content,
       );
@@ -192,21 +274,34 @@ export function useChat() {
       if (question) {
         const answer = await requestAiAnswer(question, session.accessToken);
         const assistantMessage: ChatMessage = {
+          conversationId,
+          createdAt: new Date().toISOString(),
           role: "assistant",
           content: answer,
         };
 
-        updateConversation([...nextMessages, assistantMessage]);
-        await postMessage(session.accessToken, assistantMessage.role, answer);
+        upsertConversation(conversationId, [...nextMessages, assistantMessage]);
+        await postMessage(
+          session.accessToken,
+          conversationId,
+          assistantMessage.role,
+          answer,
+        );
       }
     } catch (error) {
       console.error(error);
-      updateConversation([
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Falha ao enviar arquivo para a API.";
+      setFeedbackMessage(message);
+      upsertConversation(conversationId, [
         ...nextMessages,
         {
+          conversationId,
+          createdAt: new Date().toISOString(),
           role: "assistant",
-          content:
-            "Nao consegui conectar com a API local. Verifique se ela esta rodando em http://localhost:8001 ou defina NEXT_PUBLIC_API_URL.",
+          content: message,
         },
       ]);
     } finally {
@@ -222,6 +317,7 @@ export function useChat() {
     input,
     selectedFile,
     loading,
+    feedbackMessage,
     setInput,
     setSelectedFile,
     createConversation: createNewConversation,

@@ -6,12 +6,18 @@ from src.domain.ports import MessageHistoryPort
 
 @dataclass(frozen=True)
 class CreateMessageCommand:
+    conversation_id: str
     role: str
     content: str
 
 
 def create_message(command: CreateMessageCommand, history: MessageHistoryPort) -> Message:
-    message = Message(role=command.role, content=command.content, created_at="")
+    message = Message(
+        conversation_id=command.conversation_id,
+        role=command.role,
+        content=command.content,
+        created_at="",
+    )
     history.add(message)
     return history.list()[-1]
 
