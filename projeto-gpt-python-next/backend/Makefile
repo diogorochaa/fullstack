@@ -1,5 +1,4 @@
-.PHONY: format lint fix test typecheck check install run worker infra-up infra-down infra-logs docker-up docker-down db-up db-down db-logs \
-	migrate-up migrate-down migrate-current migrate-history migrate-revision migrate-revision-empty
+.PHONY: format lint fix test typecheck check install dev run migrate generate
 
 format:
 	uv run ruff format .
@@ -25,51 +24,14 @@ check:
 install:
 	uv sync
 
+dev:
+	uv run uvicorn src.main:app --reload --port 8001
+
 run:
-	uv run uvicorn src.main:app --reload
+	docker compose logs -f api
 
-worker:
-	uv run celery -A src.workers.celery_app worker --loglevel=info
-
-infra-up:
-	docker compose up -d postgres redis rabbitmq
-
-infra-down:
-	docker compose stop postgres redis rabbitmq
-
-infra-logs:
-	docker compose logs -f postgres redis rabbitmq
-
-docker-up:
-	docker compose up -d --build
-
-docker-down:
-	docker compose down
-
-db-up:
-	docker compose up -d postgres
-
-db-down:
-	docker compose down
-
-db-logs:
-	docker compose logs -f postgres
-
-# Migrations (defina DATABASE_URL ou use .env). Ex.: make migrate-revision m=add_column_x
-migrate-up:
+migrate:
 	PYTHONPATH=. uv run alembic upgrade head
 
-migrate-down:
-	PYTHONPATH=. uv run alembic downgrade -1
-
-migrate-current:
-	PYTHONPATH=. uv run alembic current
-
-migrate-history:
-	PYTHONPATH=. uv run alembic history
-
-migrate-revision:
+generate:
 	PYTHONPATH=. uv run alembic revision --autogenerate -m "$(m)"
-
-migrate-revision-empty:
-	PYTHONPATH=. uv run alembic revision -m "$(m)"

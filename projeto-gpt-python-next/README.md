@@ -8,10 +8,18 @@ Um sistema inteligente de processamento de documentos e chat com IA, composto po
 
 Este é um projeto full-stack que combina:
 
-- **Backend**: API REST com FastAPI para processamento de documentos, embeddings e chat com IA
+- **Backend**: API REST com FastAPI para autenticação, processamento de documentos, embeddings, histórico de mensagens e chat com IA
 - **Frontend**: Aplicação web moderna com Next.js, React e Mantine UI para interação com usuários
 
-O sistema permite que usuários façam upload de documentos (PDFs), e façam perguntas sobre o conteúdo através de um chat powered por LLM.
+O sistema permite que usuários criem conta, façam login, enviem documentos (PDFs) e façam perguntas sobre o conteúdo através de um chat com IA.
+
+---
+
+## 🖥️ Telas Principais
+
+- `/login` - Tela de acesso com e-mail e senha
+- `/register` - Tela de cadastro de novos usuários
+- `/` - Dashboard principal com chat, histórico de conversas, upload de arquivos e status da API
 
 ---
 
@@ -137,14 +145,23 @@ make db-down
 #### Executar Servidor
 
 ```bash
-# Modo desenvolvimento (com reload automático)
-make run
+# Modo desenvolvimento local (com reload automático)
+make dev
 
 # Ou diretamente
-uv run uvicorn src.main:app --reload
+uv run uvicorn src.main:app --reload --port 8001
+
+# Ver logs da API quando estiver usando Docker
+make run
+
+# Aplicar migrations manualmente
+make migrate
+
+# Gerar uma nova migration
+make generate m="nome_da_migration"
 ```
 
-A API estará disponível em `http://localhost:8000`
+A API estará disponível em `http://localhost:8001`
 
 #### Testes
 
@@ -175,10 +192,13 @@ make fix
 ### 📡 Endpoints Principais
 
 - `GET /health` - Status da aplicação
-- `POST /chat` - Enviar mensagem e obter resposta
-- `POST /upload` - Upload de documentos PDF
-- `GET /messages` - Histórico de mensagens
-- `POST /ai/answer` - Gerar resposta baseada em documentos
+- `POST /auth/register` - Criação de conta
+- `POST /auth/login` - Login e emissão de token
+- `GET /messages/` - Listar mensagens salvas
+- `POST /messages/` - Criar uma mensagem no histórico
+- `DELETE /messages/` - Limpar o histórico de mensagens
+- `POST /ai` - Gerar resposta com base no contexto recuperado
+- `POST /upload/` - Indexar um documento enviado
 
 ---
 
@@ -213,16 +233,15 @@ frontend/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx                   # Layout raiz
-│   │   ├── page.tsx                     # Página principal
+│   │   ├── page.tsx                     # Dashboard/chat principal
+│   │   ├── login/page.tsx               # Tela de login
+│   │   ├── register/page.tsx            # Tela de cadastro
 │   │   ├── globals.css                  # Estilos globais
-│   │   ├── providers.tsx                # Provedores (Mantine, etc)
-│   │   └── api/                         # API Routes (Next.js)
-│   │       ├── chat/
-│   │       ├── upload/
-│   │       └── ai/
+│   │   └── providers.tsx                # Provedores (Mantine, auth)
 │   ├── config/
 │   │   └── env.ts                       # Configurações de ambiente
 │   ├── features/
+│   │   ├── auth/                        # Autenticação e sessão
 │   │   ├── chat/                        # Feature de chat
 │   │   │   ├── actions.ts               # Server actions
 │   │   │   ├── components/              # Componentes React
@@ -231,6 +250,7 @@ frontend/
 │   │       ├── components/              # Componentes de sistema
 │   │       └── hooks/                   # Hooks de sistema
 │   ├── server/
+│   │   ├── auth-api.ts                  # Cliente API de autenticação
 │   │   └── chat-api.ts                  # Cliente API do backend
 │   ├── services/
 │   │   └── api/                         # Serviços de API
@@ -271,7 +291,7 @@ yarn install
 Criar arquivo `.env.local` no diretório `frontend/`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8001
 ```
 
 #### Desenvolvimento
@@ -305,9 +325,9 @@ npm run lint
 
 ### 📄 Páginas Principais
 
-- `/` - Dashboard principal com chat e interface
-- `/api/chat` - Endpoint para processar mensagens
-- `/api/upload` - Endpoint para upload de arquivos
+- `/login` - Entrada de usuários
+- `/register` - Cadastro de usuários
+- `/` - Dashboard principal com chat, sidebar de conversas e upload
 
 ---
 
@@ -330,11 +350,8 @@ make install
 # Configurar variáveis de ambiente
 # Editar .env com suas credenciais
 
-# Subir PostgreSQL
-make db-up
-
 # Rodar servidor
-make run
+make dev
 ```
 
 ### 3. Frontend (em outro terminal)
@@ -351,9 +368,9 @@ npm run dev
 
 ### 4. Acessar
 
-- Backend: http://localhost:8000
+- Backend: http://localhost:8001
 - Frontend: http://localhost:3000
-- Docs da API: http://localhost:8000/docs
+- Docs da API: http://localhost:8001/docs
 
 ---
 
@@ -371,8 +388,8 @@ npm run dev
 
 ## 📚 Recursos Adicionais
 
-- **FastAPI Docs**: http://localhost:8000/docs (Swagger UI)
-- **FastAPI ReDoc**: http://localhost:8000/redoc
+- **FastAPI Docs**: http://localhost:8001/docs (Swagger UI)
+- **FastAPI ReDoc**: http://localhost:8001/redoc
 - **Next.js Docs**: https://nextjs.org/docs
 - **Mantine Docs**: https://mantine.dev
 - **LangChain Docs**: https://python.langchain.com
@@ -399,6 +416,7 @@ Projeto em desenvolvimento.
 ## ❓ Suporte
 
 Para dúvidas ou issues, verifique:
+
 - Logs do backend: `make db-logs`
 - Console do navegador (Frontend)
 - Documentação interativa em `/docs` (backend)

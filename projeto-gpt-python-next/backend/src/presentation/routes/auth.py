@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +17,7 @@ from src.presentation.schemas.user_schema import (
 from src.workers.email_tasks import send_welcome_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -31,7 +34,11 @@ def register(payload: UserRegisterRequest, db: Session = Depends(get_db)):
             detail="Este e-mail ja esta cadastrado.",
         ) from None
 
-    send_welcome_email.delay(user.email)
+    try:
+        send_welcome_email(user.email)
+    except Exception:
+        logger.exception("Falha ao enviar e-mail de boas-vindas para %s", user.email)
+
     return UserResponse.model_validate(user)
 
 
