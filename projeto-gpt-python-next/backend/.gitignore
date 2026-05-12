@@ -41,3 +41,5 @@ _alembic_gen.sqlite
 # OS files
 .DS_Store
 Thumbs.db
+
+api.http
