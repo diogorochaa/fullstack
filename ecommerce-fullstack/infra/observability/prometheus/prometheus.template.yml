@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: ecommerce-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['__API_HOST__:3000']
+        labels:
+          service: ecommerce-api
+
+  - job_name: ecommerce-ia
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['ecommerce-ia:8100']
+        labels:
+          service: ecommerce-ia
+
+  - job_name: kafka
+    static_configs:
+      - targets: ['kafka-exporter:9308']
+        labels:
+          service: kafka
+
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ['rabbitmq:15692']
+        labels:
+          service: rabbitmq
