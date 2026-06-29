@@ -1,1 +1,0 @@
-export { checkApiHealth } from "./health"

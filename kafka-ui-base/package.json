@@ -1,0 +1,25 @@
+{
+  "name": "kafka-learning-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Laboratorio pratico para aprender Apache Kafka com Node.js, TypeScript, Fastify, KafkaJS, PostgreSQL, Prisma e Next.js.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @kafka-lab/shared && npm run build -w @kafka-lab/kafka && npm run build -w @kafka-lab/api && npm run build -w @kafka-lab/worker-email && npm run build -w @kafka-lab/worker-stock && npm run build -w @kafka-lab/worker-analytics && npm run build -w @kafka-lab/playground",
+    "dev:api": "npm run dev -w @kafka-lab/api",
+    "dev:email": "npm run dev -w @kafka-lab/worker-email",
+    "dev:stock": "npm run dev -w @kafka-lab/worker-stock",
+    "dev:analytics": "npm run dev -w @kafka-lab/worker-analytics",
+    "dev:playground": "npm run dev -w @kafka-lab/playground",
+    "db:generate": "npm run prisma:generate -w @kafka-lab/shared",
+    "db:migrate": "npm run prisma:migrate -w @kafka-lab/shared",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,9 +1,0 @@
-{
-  "recommendations": [
-    "biomejs.biome",
-    "charliermarsh.ruff",
-    "bradlc.vscode-tailwindcss",
-    "ms-playwright.playwright",
-    "Prisma.prisma"
-  ]
-}

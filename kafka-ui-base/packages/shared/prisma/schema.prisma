@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  CREATED
+  EVENT_PUBLISHED
+  EMAIL_PROCESSED
+  STOCK_UPDATED
+  ANALYTICS_COMPLETED
+  DLQ_FAILED
+}
+
+model Order {
+  id            String                 @id @default(cuid())
+  customerEmail String
+  productSku    String
+  quantity      Int
+  status        OrderStatus            @default(CREATED)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  events        OrderProcessingEvent[]
+}
+
+model OrderProcessingEvent {
+  id             String   @id @default(cuid())
+  orderId        String?
+  stage          String
+  service        String
+  status         String
+  message        String
+  topic          String?
+  partition      Int?
+  offset         String?
+  kafkaTimestamp DateTime?
+  createdAt      DateTime @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([stage, createdAt])
+}
+
+model ProcessedMessage {
+  id        String   @id
+  service   String
+  eventId   String
+  topic     String
+  partition Int
+  offset    String
+  createdAt DateTime @default(now())
+
+  @@unique([service, eventId])
+}
+
+model AnalyticsMetric {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  value       Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
